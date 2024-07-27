@@ -1,0 +1,16 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: bitnami/postgresql:latest
+    ports: 
+      - ${DB_PORT}:5432
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_DATABASE}
+    volumes:
+      - pg_diary_data:/bitnami/postgresql
+
+volumes:
+  pg_diary_data:
