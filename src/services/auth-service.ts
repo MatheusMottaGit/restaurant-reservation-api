@@ -1,11 +1,12 @@
 import { Role } from '@prisma/client'
 import { prisma } from '../config/prisma-client'
-import { AuthenticateUserData, CreateUserData, RegisterUserData, User } from '../models/user-model'
+import { User } from '../models/user-model'
 import { hash, compare } from 'bcryptjs'
 import { sign } from 'jsonwebtoken'
+import { AuthenticateUserDTO, CreateUserDTO, RegisterUserDTO } from '../dtos/auth-dto'
 
 export class AuthService {
-  async registerUser(registerUserData: RegisterUserData): Promise<User> {
+  async registerUser(registerUserData: RegisterUserDTO): Promise<User> {
     const { email, name, password } = registerUserData
 
     const existingUser = await prisma.user.findUnique({
@@ -30,7 +31,7 @@ export class AuthService {
     return user
   }
 
-  async createUser(createUserData: CreateUserData): Promise<User> {
+  async createUser(createUserData: CreateUserDTO): Promise<User> {
     const { email, name, password, role } = createUserData
 
     const existingUser = await prisma.user.findUnique({
@@ -55,7 +56,7 @@ export class AuthService {
     return user
   }
 
-  async authenticateUser(authenticateUserData: AuthenticateUserData): Promise<string> {
+  async authenticateUser(authenticateUserData: AuthenticateUserDTO): Promise<string> {
     const { email, password } = authenticateUserData
 
     const user = await prisma.user.findUnique({

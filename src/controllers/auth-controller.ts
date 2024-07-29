@@ -1,20 +1,13 @@
 import { Request, Response } from 'express'
 import { AuthService } from '../services/auth-service'
-import { z } from 'zod'
 import { prisma } from '../config/prisma-client'
 import { Role } from '@prisma/client'
+import { createUserSchema, loginUserSchema, registerUserSchema } from '../dtos/auth-dto'
 
 const authService = new AuthService()
 
 export class AuthController {
   async create(req: Request, res: Response): Promise<void> {
-    const createUserSchema = z.object({
-      name: z.string(),
-      email: z.string(),
-      password: z.string().min(8).max(10),
-      role: z.nativeEnum(Role),
-    })
-
     try {
       const createUserData = createUserSchema.parse(req.body)
 
@@ -43,12 +36,6 @@ export class AuthController {
   }
 
   async register(req: Request, res: Response): Promise<void> {
-    const registerUserSchema = z.object({
-      name: z.string(),
-      email: z.string(),
-      password: z.string().min(8).max(10),
-    })
-
     try {
       const registerUserData = registerUserSchema.parse(req.body)
 
@@ -61,11 +48,6 @@ export class AuthController {
   }
 
   async login(req: Request, res: Response): Promise<void> {
-    const loginUserSchema = z.object({
-      email: z.string().email(),
-      password: z.string(),
-    })
-
     try {
       const loginUserData = loginUserSchema.parse(req.body)
 

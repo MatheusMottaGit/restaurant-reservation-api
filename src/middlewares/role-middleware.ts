@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
-import { prisma } from '../config/prisma-client';
-import { Role } from '@prisma/client';
+import { Request, Response, NextFunction } from 'express'
+import { prisma } from '../config/prisma-client'
+import { Role } from '@prisma/client'
 
 export class RoleMiddleware {
   roleGuard(role: Role) {
@@ -9,13 +9,13 @@ export class RoleMiddleware {
         where: {
           id: req.userId,
         },
-      });
+      })
 
       if (!user || user.role !== role) {
-        return res.status(403).json({ message: 'Forbidden' });
+        return res.status(403).json({ message: 'Your role is not required for this action.' })
       }
 
-      next();
-    };
+      next()
+    }
   }
 }

@@ -1,8 +1,8 @@
 import { ReservationModel } from "./reservation-model"
 
-export interface TableModel {
-  id: string
+export interface Table {
+  id: number
   capacity: number
   description: string
-  reservations: ReservationModel[]
+  reservations?: ReservationModel[]
 }

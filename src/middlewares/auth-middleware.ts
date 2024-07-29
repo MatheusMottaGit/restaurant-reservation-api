@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { JWTService } from "../services/jwt/jwt-service";
+import { JWTService } from "../services/jwt-service";
 
 const jwtService = new JWTService()
 
@@ -10,7 +10,7 @@ type JwtPayload = {
 }
 
 export class AuthMiddleware {
-  async authenticateToken(req: Request, res: Response, next: NextFunction) {
+  async authGuard(req: Request, res: Response, next: NextFunction) {
     const { authorization } = req.headers
 
     if (!authorization) {

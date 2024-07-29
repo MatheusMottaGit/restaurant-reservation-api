@@ -16,7 +16,7 @@ router.post('/login', authController.login)
 router.post(
   '/create', 
   roleMiddleware.roleGuard(Role.ADMIN),
-  authMiddleware.authenticateToken, 
+  authMiddleware.authGuard, 
   authController.create
 )
 

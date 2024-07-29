@@ -1,18 +1,14 @@
-import { UserModel } from "./user-model"
+import { Status } from "@prisma/client"
+import { User } from "./user-model"
 
-enum Status {
-  CONFIRMED = 'confirmed',
-  CANCELED = 'canceled'
-}
-
-export interface ReservationModel {
+export interface Reservation {
   id: string
-  client: UserModel
-  table: {}
-  date: string
-  hour: string
+  client?: User
+  table?: {}
+  date: Date
+  hour: Date
   totalPeople: number
   status: Status
   userId: string
-  tableId: string
+  tableId: number
 }
