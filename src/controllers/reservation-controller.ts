@@ -42,17 +42,17 @@ export class ReservationController {
         createReservationQueryParams
       );
 
-      // if (createdReservation) {
-      //   const userReservation = await prisma.user.findFirst({
-      //     where: {
-      //       id: createdReservation.userId,
-      //     },
-      //   });
+      if (createdReservation) {
+        const userReservation = await prisma.user.findFirst({
+          where: {
+            id: createdReservation.userId,
+          },
+        });
 
-      //   if (userReservation) {
-      //     await mailerService.sendReservationEmail(userReservation.email, createdReservation);
-      //   }
-      // }
+        if (userReservation) {
+          await mailerService.sendReservationEmail(userReservation.email, createdReservation);
+        }
+      }
 
       res.status(201).json(createdReservation);
     } catch (error) {

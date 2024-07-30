@@ -7,6 +7,8 @@ export class MailerService {
   constructor() {
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
+      secure: true,
+      host: "smtp.gmail.com",
       auth: {
         user: process.env.EMAIL,
         pass: process.env.PASS
@@ -20,7 +22,7 @@ export class MailerService {
         from: process.env.EMAIL,
         to: toEmail,
         subject: 'Reservation Confirmation',
-        text: `Dear ${reservation.userId}, your reservation is confirmed for ${reservation.date} at ${reservation.hour}.`
+        text: `Dear ${reservation.client?.name}, your reservation is confirmed for ${reservation.date} at ${reservation.hour}.`
       })
 
       console.log('Email sent successfully')
