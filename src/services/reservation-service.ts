@@ -22,7 +22,7 @@ export class ReservationService {
 
     const { tableId } = createReservationQuery
 
-    const existingReservation = await prisma.reservation.findFirstOrThrow({
+    const existingReservation = await prisma.reservation.findFirst({
       where: {
         tableId,
         date,
@@ -31,6 +31,20 @@ export class ReservationService {
 
     if (existingReservation) {
       throw new Error("This table is already in use for this selected date and time.")
+    }
+
+    const table = await prisma.table.findUnique({
+      where: {
+        id: tableId
+      }
+    })
+
+    if (!table) {
+      throw new Error("This table doesn't exists.")
+    }
+
+    if (totalPeople > table.capacity) {
+      throw new Error(`This table only supports ${table.capacity} people.`)
     }
 
     const createdReservation = await prisma.reservation.create({
@@ -80,7 +94,7 @@ export class ReservationService {
 
     const { tableId, userId, date } = cancelReservationQueryParams
 
-    const existingReservation = await prisma.reservation.findFirstOrThrow({
+    const existingReservation = await prisma.reservation.findUnique({
       where: {
         date,
         id, 
@@ -88,6 +102,10 @@ export class ReservationService {
         userId
       }
     })
+
+    if (!existingReservation) {
+      throw new Error("This reservation wasn't created.")
+    }
 
     const canceledReservation = await prisma.reservation.update({
       where: {

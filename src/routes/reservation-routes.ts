@@ -12,7 +12,7 @@ const reservationController = new ReservationController()
 
 router.post('/reservations/:userId', 
   authMiddleware.authGuard,
-  roleMiddleware.roleGuard(Role.ADMIN),
+  // roleMiddleware.roleGuard(Role.CLIENT),
   reservationController.create
 )
 
@@ -24,7 +24,8 @@ router.get('/reservations/:userId',
 
 router.put('/reservations/:id',
   authMiddleware.authGuard,
-  roleMiddleware.roleGuard(Role.CLIENT)
+  roleMiddleware.roleGuard(Role.CLIENT),
+  reservationController.cancel
 )
 
 export default router

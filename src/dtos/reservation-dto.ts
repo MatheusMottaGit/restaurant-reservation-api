@@ -3,15 +3,15 @@ import { z } from "zod";
 export const createReservationBodySchema = z.object({
   date: z.coerce.date(),
   hour: z.coerce.date(),
-  totalPeople: z.number().int().min(1),
+  totalPeople: z.number().int()
 })
 
 export const createReservationParamsSchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.string().uuid()
 })
 
 export const createReservationQueryParamSchema = z.object({
-  tableId: z.number().min(1)
+  tableId: z.number()
 })
 
 export const listUserReservationParamsSchema = z.object({
@@ -19,12 +19,12 @@ export const listUserReservationParamsSchema = z.object({
 })
 
 export const cancelReservationParamsSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().uuid()
 })
 
 export const cancelReservationQueryParamSchema = z.object({
   userId: z.string().uuid(),
-  tableId: z.number().min(1),
+  tableId: z.number(),
   date: z.coerce.date()
 })
 
