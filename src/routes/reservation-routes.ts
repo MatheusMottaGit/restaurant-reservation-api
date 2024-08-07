@@ -10,22 +10,15 @@ const authMiddleware = new AuthMiddleware()
 const roleMiddleware = new RoleMiddleware()
 const reservationController = new ReservationController()
 
-router.post('/reservations/:userId', 
-  authMiddleware.authGuard,
-  // roleMiddleware.roleGuard(Role.CLIENT),
-  reservationController.create
-)
-
 router.get('/reservations/:userId', 
   authMiddleware.authGuard,
-  roleMiddleware.roleGuard(Role.ADMIN),
   reservationController.index
 )
 
-router.put('/reservations/:id',
+router.get('/reservations', // rote for dashboard analysis
   authMiddleware.authGuard,
-  roleMiddleware.roleGuard(Role.CLIENT),
-  reservationController.cancel
+  roleMiddleware.roleGuard(Role.ADMIN),
+  reservationController.filteredIndex
 )
 
 export default router

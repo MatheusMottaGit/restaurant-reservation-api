@@ -1,69 +1,11 @@
-import { Status } from "@prisma/client"
 import { prisma } from "../config/prisma-client"
-import {
-  CreateReservationBodyDTO,
-  CreateReservationParamsDTO,
-  CreateReservationQueryParamDTO,
-  ListUserReservationParamsDTO,
-  CancelReservationParamsDTO,
-  CancelReservationQueryParamDTO,
-} from "../dtos/reservation-dto"
+import { ListReservationsPeriodsFiltersDTO, ListReservationsStatusFiltersDTO } from "../dtos/reservation-dto"
 import { Reservation } from "../models/reservation-model"
 
+const today = new Date()
+
 export class ReservationService {
-  async creatUserReservation(
-    createReservationBody: CreateReservationBodyDTO,
-    createReservationParams: CreateReservationParamsDTO,
-    createReservationQuery: CreateReservationQueryParamDTO
-  ): Promise<Reservation> {
-    const { date, hour, totalPeople } = createReservationBody
-
-    const { userId } = createReservationParams
-
-    const { tableId } = createReservationQuery
-
-    const existingReservation = await prisma.reservation.findFirst({
-      where: {
-        tableId,
-        date,
-      },
-    })
-
-    if (existingReservation) {
-      throw new Error("This table is already in use for this selected date and time.")
-    }
-
-    const table = await prisma.table.findUnique({
-      where: {
-        id: tableId
-      }
-    })
-
-    if (!table) {
-      throw new Error("This table doesn't exists.")
-    }
-
-    if (totalPeople > table.capacity) {
-      throw new Error(`This table only supports ${table.capacity} people.`)
-    }
-
-    const createdReservation = await prisma.reservation.create({
-      data: {
-        userId,
-        tableId,
-        date,
-        hour,
-        status: Status.CONFIRMED,
-        totalPeople,
-      },
-    })
-
-    return createdReservation
-  }
-
-  async listUserReservations(listUserReservationParams: ListUserReservationParamsDTO): Promise<Reservation[]> {
-    const { userId } = listUserReservationParams
-
+  async listUserReservations(userId: string): Promise<Reservation[]> {
     const user = await prisma.user.findUniqueOrThrow({
       where: {
         id: userId,
@@ -86,36 +28,46 @@ export class ReservationService {
     return reservations ?? []
   }
 
-  async cancelUserReservation(
-    cancelReservationParams: CancelReservationParamsDTO,
-    cancelReservationQueryParams: CancelReservationQueryParamDTO
-  ): Promise<Reservation> {
-    const { id } = cancelReservationParams
+  async listReservationsByPeriod({ period }: ListReservationsPeriodsFiltersDTO): Promise<Reservation[]> {
+    let startDate: Date
+    let endDate: Date
 
-    const { tableId, userId, date } = cancelReservationQueryParams
-
-    const existingReservation = await prisma.reservation.findUnique({
-      where: {
-        date,
-        id, 
-        tableId,
-        userId
-      }
-    })
-
-    if (!existingReservation) {
-      throw new Error("This reservation wasn't created.")
+    switch (period) {
+      case "daily":
+        startDate = new Date(today.setHours(0, 0, 0, 0))
+        endDate = new Date(today.setHours(23, 59, 59, 999))
+        break;
+      case "weekly":
+        startDate = new Date(today.setDate(today.getDate() - today.getDay()))
+        endDate = new Date(today.setDate(today.getDate() + 6))
+        break;
+      case "monthly":
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1)
+        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+        break;
+      default:
+        throw new Error("Invalid filter")
     }
 
-    const canceledReservation = await prisma.reservation.update({
+    const reservations = await prisma.reservation.findMany({
       where: {
-        id: existingReservation.id
-      },
-      data: {
-        status: Status.CANCELED
+        date: {
+          gte: startDate,
+          lte: endDate
+        }
       }
     })
 
-    return canceledReservation
+    return reservations
+  }
+
+  async listReservationsByStatus({ status }: ListReservationsStatusFiltersDTO): Promise<Reservation[]>{
+    const reservations = await prisma.reservation.findMany({
+      where: {
+        status
+      }
+    })
+
+    return reservations
   }
 }

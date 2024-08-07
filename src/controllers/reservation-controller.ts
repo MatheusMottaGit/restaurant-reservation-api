@@ -1,80 +1,37 @@
 import { Request, Response } from "express"
-import {
-  cancelReservationParamsSchema,
-  cancelReservationQueryParamSchema,
-  createReservationBodySchema,
-  createReservationParamsSchema,
-  createReservationQueryParamSchema,
-  listUserReservationParamsSchema,
-} from "../dtos/reservation-dto"
+import { listReservationsPeriodsFilters, listReservationsStatusFilters } from "../dtos/reservation-dto"
 import { ReservationService } from "../services/reservation-service"
-import { MailerService } from "../services/mailer-service"
-import { prisma } from "../config/prisma-client"
+// import { MailerService } from "../services/mailer-service"
 
 const reservationService = new ReservationService()
-const mailerService = new MailerService()
+// const mailerService = new MailerService()
 
 export class ReservationController {
   async index(req: Request, res: Response): Promise<void> {
     try {
-      const listUserReservationParamsData = listUserReservationParamsSchema.parse(req.params)
+      const userId = String(req.params.userId)
 
-      const reservations = await reservationService.listUserReservations(listUserReservationParamsData)
+      const reservations = await reservationService.listUserReservations(userId)
 
       res.status(201).json(reservations)
     } catch (error) {
       res.status(404).json(error)
     }
-  }
+  } 
 
-  async create(req: Request, res: Response): Promise<void> {
+  async filteredIndex(req: Request, res: Response): Promise<void> {
     try {
-      const createReservationBodyData = createReservationBodySchema.parse(req.body);
-      const createReservationParamsData = createReservationParamsSchema.parse(req.params);
-      const createReservationQueryParams = createReservationQueryParamSchema.parse({
-        ...req.query,
-        tableId: Number(req.query.tableId)
-      });
+      const periodsFilters = listReservationsPeriodsFilters.parse(req.query)
+      const statusFilters = listReservationsStatusFilters.parse(req.query)
 
-      const createdReservation = await reservationService.creatUserReservation(
-        createReservationBodyData,
-        createReservationParamsData,
-        createReservationQueryParams
-      );
-
-      if (createdReservation) {
-        const userReservation = await prisma.user.findFirst({
-          where: {
-            id: createdReservation.userId,
-          },
-        });
-
-        if (userReservation) {
-          await mailerService.sendReservationEmail(userReservation.email, createdReservation);
-        }
+      if (periodsFilters) {
+        const periodicReservations = await reservationService.listReservationsByPeriod(periodsFilters)
+        res.status(201).json(periodicReservations)
+      }else if (statusFilters) {
+        const statusReservations = await reservationService.listReservationsByStatus(statusFilters)
+        res.status(201).json(statusReservations)
       }
 
-      res.status(201).json(createdReservation);
-    } catch (error) {
-      res.status(404).json(error);
-    }
-  }
-
-  async cancel(req: Request, res: Response): Promise<void> {
-    try {
-      const cancelUserReservationParams = cancelReservationParamsSchema.parse(req.params)
-
-      const cancelUserReservationQueryParam = cancelReservationQueryParamSchema.parse({
-        ...req.query,
-        tableId: Number(req.query.tableId)
-      })
-
-      const canceledReservation = await reservationService.cancelUserReservation(
-        cancelUserReservationParams,
-        cancelUserReservationQueryParam
-      )
-
-      res.status(201).json(canceledReservation)
     } catch (error) {
       res.status(404).json(error)
     }
