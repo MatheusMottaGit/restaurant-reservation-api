@@ -1,8 +1,6 @@
 import { prisma } from "../config/prisma-client"
-import { ListReservationsPeriodsFiltersDTO, ListReservationsStatusFiltersDTO } from "../dtos/reservation-dto"
+import { ListReservationsFiltersDTO } from "../dtos/reservation-dto"
 import { Reservation } from "../models/reservation-model"
-
-const today = new Date()
 
 export class ReservationService {
   async listUserReservations(userId: string): Promise<Reservation[]> {
@@ -28,46 +26,103 @@ export class ReservationService {
     return reservations ?? []
   }
 
-  async listReservationsByPeriod({ period }: ListReservationsPeriodsFiltersDTO): Promise<Reservation[]> {
+  async listFilteredReservations({ period, status }: ListReservationsFiltersDTO): Promise<number> {
+    const now = new Date() // returns time that this line has been executed
+    const currentMonth = now.getMonth()
+    const currentYear = now.getFullYear()
+    
     let startDate: Date
     let endDate: Date
-
+    
     switch (period) {
-      case "daily":
-        startDate = new Date(today.setHours(0, 0, 0, 0))
-        endDate = new Date(today.setHours(23, 59, 59, 999))
+      case "daily": // daily interval
+        startDate = new Date(now.setHours(0, 0, 0, 0)) // start of the day
+        endDate = new Date(now.setHours(23, 59, 59, 999)) // end of the day
         break;
-      case "weekly":
-        startDate = new Date(today.setDate(today.getDate() - today.getDay()))
-        endDate = new Date(today.setDate(today.getDate() + 6))
+      case "weekly": // weekly interval
+        const lastSunday = new Date(now)
+        lastSunday.setDate(now.getDate() - now.getDay())
+        lastSunday.setHours(0, 0, 0, 0)
+    
+        const nextSunday = new Date(lastSunday)
+        nextSunday.setDate(lastSunday.getDate() + 7)
+        nextSunday.setHours(23, 59, 59, 999)
+    
+        startDate = lastSunday
+        endDate = nextSunday
         break;
-      case "monthly":
-        startDate = new Date(today.getFullYear(), today.getMonth(), 1)
-        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+      case "monthly": // monthly interval
+        const startOfMonth = new Date(currentYear, currentMonth, 1) // start of current month
+        const firstDayOfNextMonth = new Date(currentYear, currentMonth + 1, 1)
+        const endOfMonth = new Date(firstDayOfNextMonth)
+        endOfMonth.setDate(firstDayOfNextMonth.getDate() - 1)
+
+        startDate = startOfMonth
+        endDate = endOfMonth
         break;
       default:
-        throw new Error("Invalid filter")
+        throw new Error("No filter provided.")
     }
 
-    const reservations = await prisma.reservation.findMany({
+    const filteredCountReservations = await prisma.reservation.groupBy({
+      by: ['date'],
       where: {
         date: {
           gte: startDate,
           lte: endDate
-        }
-      }
-    })
-
-    return reservations
-  }
-
-  async listReservationsByStatus({ status }: ListReservationsStatusFiltersDTO): Promise<Reservation[]>{
-    const reservations = await prisma.reservation.findMany({
-      where: {
+        },
         status
+      },
+      _count: true
+    })
+
+    return filteredCountReservations.length
+  }
+
+  async listWeekdaysReservationsAmount(): Promise<{ weekday: string; reservationsAmount: number; }[]> {
+    const now = new Date()
+
+    const lastSunday = new Date(now)
+    lastSunday.setDate(now.getDate() - now.getDay())
+    lastSunday.setHours(0, 0, 0, 0)
+
+    const nextSunday = new Date(lastSunday)
+    nextSunday.setDate(lastSunday.getDate() + 6)
+    nextSunday.setHours(23, 59, 59, 999)
+
+    const startDate = lastSunday
+    const endDate = nextSunday
+
+    const weekdays = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+    ]
+
+    const weeklyReservations = await prisma.reservation.groupBy({
+      by: ['date'],
+      where: {
+        date: {
+          gte: startDate,
+          lte: endDate
+        },
+      },
+      _count: true
+    })
+
+    const weekdaysReservationsAmount = weekdays.map((weekday) => {
+      return {
+        weekday,
+        reservationsAmount: weeklyReservations.filter(res => weekdays[res.date.getDay()] === weekday).length
       }
     })
 
-    return reservations
+    return weekdaysReservationsAmount
   }
+
+
 }

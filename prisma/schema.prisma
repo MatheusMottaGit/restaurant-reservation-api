@@ -37,8 +37,6 @@ model Table {
   capacity     Int
   description  String
   reservations Reservation[]
-
-  @@map("tables")
 }
 
 model Reservation {
@@ -52,6 +50,4 @@ model Reservation {
 
   userId  String
   tableId Int
-
-  @@map("reservations")
 }

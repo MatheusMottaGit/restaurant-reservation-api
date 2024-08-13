@@ -1,13 +1,9 @@
-import { Status } from "@prisma/client";
-import { z } from "zod";
+import { Status } from "@prisma/client"
+import { z } from "zod"
 
-export const listReservationsPeriodsFilters = z.object({
-  period: z.enum(["daily", "weekly", "monthly"]).optional(),
+export const listReservationsFilters = z.object({
+  period: z.enum(["daily", "weekly", "monthly"]).default("daily"),
+  status: z.enum([Status.CONFIRMED, Status.CANCELED]).default("CONFIRMED")
 })
 
-export const listReservationsStatusFilters = z.object({
-  status: z.enum([Status.CONFIRMED, Status.CANCELED]).optional()
-})
-
-export type ListReservationsPeriodsFiltersDTO = z.infer<typeof listReservationsPeriodsFilters>
-export type ListReservationsStatusFiltersDTO = z.infer<typeof listReservationsStatusFilters>
+export type ListReservationsFiltersDTO = z.infer<typeof listReservationsFilters>

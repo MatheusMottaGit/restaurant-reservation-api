@@ -12,13 +12,19 @@ const reservationController = new ReservationController()
 
 router.get('/reservations/:userId', 
   authMiddleware.authGuard,
-  reservationController.index
+  reservationController.userReservationsindex
 )
 
 router.get('/reservations', // rote for dashboard analysis
   authMiddleware.authGuard,
   roleMiddleware.roleGuard(Role.ADMIN),
-  reservationController.filteredIndex
+  reservationController.filteredIndex,
+)
+
+router.get('/weekdays/reservations', // rote for dashboard analysis
+  authMiddleware.authGuard,
+  roleMiddleware.roleGuard(Role.ADMIN),
+  reservationController.weekdaysReservationsAmountIndex
 )
 
 export default router
