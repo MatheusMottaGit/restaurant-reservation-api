@@ -124,5 +124,34 @@ export class ReservationService {
     return weekdaysReservationsAmount
   }
 
+  async listCanceledReservationsRateInDay(): Promise<{ canceledRate: number; reservations: number; }> {
+    const now = new Date()
+    const startDate = new Date(now.setHours(0, 0, 0, 0))
+    const endDate = new Date(now.setHours(23, 59, 59, 999))
 
+    const allReservations = await prisma.reservation.findMany()
+
+    const canceledReservations = await prisma.reservation.aggregate({
+      _count: {
+        _all: true,
+        status: true
+      },
+      where: {
+        status: "CANCELED",
+        date: {
+          gte: startDate,
+          lte: endDate
+        }
+      }
+    })
+
+    const canceledReservationsCount = canceledReservations._count.status
+
+    const canceledRate = (canceledReservationsCount / allReservations.length) * 100
+
+    return {
+      canceledRate,
+      reservations: allReservations.length
+    }
+  }
 }

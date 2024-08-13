@@ -29,12 +29,21 @@ export class ReservationController {
     }
   }
 
-  async weekdaysReservationsAmountIndex(req: Request, res: Response) {
+  async weekdaysReservationsAmountIndex(req: Request, res: Response): Promise<void> {
     try {
       const weekdaysReservationsAmount = await reservationService.listWeekdaysReservationsAmount()
       res.status(200).json({ weekdaysReservationsAmount })
     } catch (error) {
       res.status(404).send(error)
+    }
+  }
+
+  async canceledReservationsRateIndex(req: Request, res: Response): Promise<void> {
+    try {
+      const rate = await reservationService.listCanceledReservationsRateInDay()
+      res.status(200).json({ rate })
+    } catch (error) {
+      res.status(404).json(error)
     }
   }
 }
