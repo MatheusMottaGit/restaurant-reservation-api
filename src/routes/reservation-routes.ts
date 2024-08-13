@@ -27,10 +27,16 @@ router.get('/weekdays/reservations', // rote for dashboard analysis
   reservationController.weekdaysReservationsAmountIndex
 )
 
-router.get('/rate/reservations',
+router.get('/rate/reservations', // rote for dashboard analysis
   authMiddleware.authGuard,
   roleMiddleware.roleGuard(Role.ADMIN),
   reservationController.canceledReservationsRateIndex
+)
+
+router.get('/rush/reservations', // rote for dashboard analysis
+  authMiddleware.authGuard,
+  roleMiddleware.roleGuard(Role.ADMIN),
+  reservationController.reservationsCountPerHourIndex
 )
 
 export default router
