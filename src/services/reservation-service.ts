@@ -1,6 +1,7 @@
 import { prisma } from "../config/prisma-client"
-import { ListReservationsCounterPerHourFiltersDTO, ListReservationsFiltersDTO } from "../dtos/reservation-dto"
+import { ListReservationsFiltersDTO } from "../dtos/reservation-dto"
 import { Reservation } from "../models/reservation-model"
+import { handlePeriodsDates } from "../utils/period-dates-handler"
 
 export class ReservationService {
   async listUserReservations(userId: string): Promise<Reservation[]> {
@@ -27,42 +28,7 @@ export class ReservationService {
   }
 
   async listFilteredReservations({ period, status }: ListReservationsFiltersDTO): Promise<number> {
-    const now = new Date() // returns time that this line has been executed
-    const currentMonth = now.getMonth()
-    const currentYear = now.getFullYear()
-    
-    let startDate: Date
-    let endDate: Date
-    
-    switch (period) {
-      case "daily": // daily interval
-        startDate = new Date(now.setHours(0, 0, 0, 0)) // start of the day
-        endDate = new Date(now.setHours(23, 59, 59, 999)) // end of the day
-        break;
-      case "weekly": // weekly interval
-        const lastSunday = new Date(now)
-        lastSunday.setDate(now.getDate() - now.getDay())
-        lastSunday.setHours(0, 0, 0, 0)
-    
-        const nextSunday = new Date(lastSunday)
-        nextSunday.setDate(lastSunday.getDate() + 7)
-        nextSunday.setHours(23, 59, 59, 999)
-    
-        startDate = lastSunday
-        endDate = nextSunday
-        break;
-      case "monthly": // monthly interval
-        const startOfMonth = new Date(currentYear, currentMonth, 1) // start of current month
-        const firstDayOfNextMonth = new Date(currentYear, currentMonth + 1, 1)
-        const endOfMonth = new Date(firstDayOfNextMonth)
-        endOfMonth.setDate(firstDayOfNextMonth.getDate() - 1)
-
-        startDate = startOfMonth
-        endDate = endOfMonth
-        break;
-      default:
-        throw new Error("No filter provided.")
-    }
+    const { startDate, endDate } = handlePeriodsDates(period)
 
     const filteredCountReservations = await prisma.reservation.groupBy({
       by: ['date'],
@@ -155,43 +121,14 @@ export class ReservationService {
     }
   }
 
-  async listReservationsCountPerHour({ period }: ListReservationsCounterPerHourFiltersDTO): Promise<{ hour: number; reservationsAmount: number; }[]> {
+  async listReservationsCountPerHourInMonth(): Promise<{ hour: string; reservationsAmount: number; }[]> {
     const now = new Date()
     const currentMonth = now.getMonth()
     const currentYear = now.getFullYear()
     
-    let startDate: Date
-    let endDate: Date
-    
-    switch (period) {
-      case "daily":
-        startDate = new Date(now.setHours(0, 0, 0, 0))
-        endDate = new Date(now.setHours(23, 59, 59, 999))
-        break;
-      case "weekly":
-        const lastSunday = new Date(now)
-        lastSunday.setDate(now.getDate() - now.getDay())
-        lastSunday.setHours(0, 0, 0, 0)
-  
-        const nextSunday = new Date(lastSunday)
-        nextSunday.setDate(lastSunday.getDate() + 7)
-        nextSunday.setHours(23, 59, 59, 999)
-  
-        startDate = lastSunday
-        endDate = nextSunday
-        break;
-      case "monthly":
-        const startOfMonth = new Date(currentYear, currentMonth, 1)
-        const firstDayOfNextMonth = new Date(currentYear, currentMonth + 1, 1)
-        const endOfMonth = new Date(firstDayOfNextMonth)
-        endOfMonth.setDate(firstDayOfNextMonth.getDate() - 1)
-
-        startDate = startOfMonth
-        endDate = endOfMonth
-        break;
-      default:
-        throw new Error("No filter provided.")
-    }
+    const startDate = new Date(currentYear, currentMonth, 1, 12, 0, 0)
+    const endDate = new Date(currentYear, currentMonth + 1, 1, 22, 59, 59)
+    endDate.setDate(endDate.getDate() - 1)
 
     const reservationsPerHour = await prisma.reservation.groupBy({
       by: ['date'],
@@ -202,22 +139,25 @@ export class ReservationService {
         },
         status: "CONFIRMED"
       },
-      _count: true,
-      orderBy: {
-        date: 'asc'
+      _count: {
+        _all: true
       }
     });
 
-    const hourlyReservationsCount = Array(24).fill(0)
+    const hours = Array.from({ length: 11 }, (_, i) => i + 12)
 
-    reservationsPerHour.forEach(reservation => {
-      const hour = new Date(reservation.date).getHours()
-      hourlyReservationsCount[hour] += reservation._count
+    const reservationsCountPerHour = hours.map((hour) => {
+      const reservationsHour = reservationsPerHour.filter((res) => {
+        return res.date.getHours() === hour
+      }).length
+
+      return {
+        hour: String(hour).concat('h'),
+        reservationsAmount: reservationsHour
+      } 
     })
 
-    return hourlyReservationsCount.map((amount: number, hour) => ({
-      hour,
-      reservationsAmount: amount
-    }))
-  }
+    return reservationsCountPerHour
+}
+
 }

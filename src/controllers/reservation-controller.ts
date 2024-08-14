@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { listReservationsCountPerHourFilters, listReservationsFilters } from "../dtos/reservation-dto"
+import { listReservationsFilters } from "../dtos/reservation-dto"
 import { ReservationService } from "../services/reservation-service"
 
 const reservationService = new ReservationService()
@@ -49,8 +49,7 @@ export class ReservationController {
 
   async reservationsCountPerHourIndex(req: Request, res: Response): Promise<void> {
     try {
-      const filters = listReservationsCountPerHourFilters.parse(req.query)
-      const amount = await reservationService.listReservationsCountPerHour(filters)
+      const amount = await reservationService.listReservationsCountPerHourInMonth()
       res.status(200).json({ amount })
     } catch (error) {
       res.status(404).json(error)
